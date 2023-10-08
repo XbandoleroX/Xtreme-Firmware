@@ -10,6 +10,11 @@ import re
 import io
 import os
 
+# TODO: Create new entities for each actor
+# TODO: Delegate the logic to the new entities
+# TODO: Clean code smells (intense pedantry, shutgun surgery, etc)
+# TODO: Desing a simple API to expose in the __name__ == "__main__" 
+# TODO: Desing a simple API to expose in the __name__ == "__main__" 
 class AssetPacker:
     def __init__(self) -> None:
         self.bm_extension = ".bm"
@@ -114,17 +119,13 @@ class AssetPacker:
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.with_suffix(self.bmx_extension).write_bytes(self._convert_bmx(src))
 
-    def begin(self, 
-              input: "str | pathlib.Path", 
-              output: "str | pathlib.Path", 
-              logger: typing.Callable
-        ):
-        
+    def begin(self, input: "str | pathlib.Path", output: "str | pathlib.Path", logger: typing.Callable):
         input = pathlib.Path(input)
         output = pathlib.Path(output)
         anims_str = "Anims"
         anims_manifest = "Anims/manifest.txt"
         icons_str = "Icons"
+        # TODO: Encapsulate this logic
         for source in input.iterdir():
             if source == output or not source.is_dir(): continue
 
@@ -137,6 +138,7 @@ class AssetPacker:
                     pass
 
             full_path_anums_manifest = source / anims_manifest
+            # TODO: Encapsulate this logic
             if (full_path_anums_manifest).exists():
                 (packed / anims_str).mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(source / anims_manifest, packed / anims_manifest)
@@ -154,18 +156,19 @@ class AssetPacker:
                     source_anims = source / anims_str / anim
                     packed_anims = packed / anims_str / anim
                     self._pack_anim(source_anims, packed_anims)
-
-            if (source / icons_str).is_dir():
-                for icons in (source / icons_str).iterdir():
+            # TODO: Reduce depth
+            src_icons_path = source / icons_str
+            if (src_icons_path).is_dir():
+                for icons in (src_icons_path).iterdir():
                     if not icons.is_dir(): continue
                     for icon in icons.iterdir():
                         p = icon, packed / icons_str / icons.name / icon.name
                         if icon.is_dir():
                             logger(f"Compile: icon for pack '{source.name}': {icons.name}/{icon.name}")
-                            self._pack_icon_animated(p)
+                            self._pack_icon_animated(icon, p)
                         elif icon.is_file():
                             logger(f"Compile: icon for pack '{source.name}': {icons.name}/{icon.name}")
-                            self._pack_icon_static(p)
+                            self._pack_icon_static(icon, p)
 
 
     def get_parent_directory(self, file) -> pathlib.Path:
@@ -186,10 +189,7 @@ if __name__ == "__main__":
 
     start_time = time.perf_counter()
 
-    ap.begin(here, 
-            asset_pack_directory, 
-            logger=print
-        )
+    ap.begin(here, asset_pack_directory, logger=print)
 
     end_time = time.perf_counter()
     result_time = round(end_time - start_time, 2)
